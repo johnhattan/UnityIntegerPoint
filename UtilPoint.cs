@@ -60,6 +60,35 @@ public struct Point2
 		Length
 	};
 
+	private static readonly Point2[] PtCompass = { north, northeast, east, southeast, south, southwest, west, northwest };
+
+	public static Direction DirectionRotate(Direction d, int delta)
+	{
+		delta = (delta % (int)Direction.Length) + (int)Direction.Length;
+		return (Direction)(((int)d + delta) % (int)Direction.Length);
+	}
+
+	public static Direction DirectionOpposite(Direction d)
+	{
+		return DirectionRotate(d, 4);
+	}
+
+	public static Direction DirectionNormalize(Direction d)
+	{ // mods a direction into compass directions
+		return DirectionRotate(d, 0);
+	}
+
+	public static Direction DirectionOf(Point2 p)
+	{
+		Direction RetVal = Direction.Invalid;
+		Point2 pUnit = p.unit;
+		for(var D = Direction.First; (D < Direction.Length) && (RetVal == Direction.Invalid); ++D)
+			if(PtCompass[(int)D] == pUnit)
+				RetVal = D;
+
+		return RetVal;
+	}
+
 	public static readonly Point2 zero = new Point2(0, 0);
 	public static readonly Point2 one = new Point2(1, 1);
 
@@ -225,14 +254,9 @@ public struct Point2
 		y = (int)v.y;
 	}
 
-	private static readonly Point2[] PtCompass = { north, northeast, east, southeast, south, southwest, west, northwest };
-
-	public Point2(Direction D)
+	public Point2(Direction d)
 	{ // returns the x y delta or Point2.Zero if the value is out of range
-		if((D >= Direction.First) && (D < Direction.Length))
-			this = PtCompass[(int)D];
-		else
-			x = y = 0;
+		this = PtCompass[(int)DirectionNormalize(d)];
 	}
 }
 
