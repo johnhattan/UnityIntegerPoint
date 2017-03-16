@@ -1,6 +1,69 @@
 ﻿using System;
 using UnityEngine;
 
+public static class Mathi
+{ // int versions of the Math + Mathf class. Duplicate Math methods because we can't derive
+	static public int Max(int i1, int i2)
+	{
+		return Math.Max(i1, i2);
+	}
+
+	static public int Min(int i1, int i2)
+	{
+		return Math.Min(i1, i2);
+	}
+
+	static public int Abs(this int i)
+	{
+		return Math.Abs(i);
+	}
+
+	static public int Sign(this int i)
+	{
+		return Math.Sign(i);
+	}
+
+	static public int Clamp(this int v, int min, int max)
+	{
+		return Min(Max(v, min), max);
+	}
+
+	static public int ClampExclusive(this int v, int min, int max)
+	{ // excludes the top value
+		return Clamp(v, min, max - 1);
+	}
+
+	public static int FloorToInt(float f)
+	{ // Returns the highest integer equal to the given float.
+		var n = (int)f; //truncate
+		return (n > f) ? n - 1 : n;
+	}
+
+	public static int Mod(int m, int n)
+	{ // Mod operator that also works for negative m.
+		return (m >= 0) ? (m % n) : ((m - 2 * m * n) % n);
+	}
+
+	public static int Div(int m, int n)
+	{ // Floor division that also work for negative m.
+		if(m >= 0)
+			return m / n;
+
+		int t = m / n;
+		return (t * n == m) ? t : t - 1;
+	}
+
+	public static float Frac(float x)
+	{
+		return x - FloorToInt(x);
+	}
+
+	public static int Signum(this int i)
+	{
+		return (i == 0) ? 0 : ((i > 0) ? 1 : -1);
+	}
+}
+
 public struct Point2
 {
 	public int x, y;
@@ -61,6 +124,24 @@ public struct Point2
 	};
 
 	private static readonly Point2[] PtCompass = { north, northeast, east, southeast, south, southwest, west, northwest };
+	private static readonly string[] StrCompass = new string[] { "North", "NorthEast", "East", "SouthEast", "South", "SouthWest", "West", "NorthWest" };
+
+	public Direction RegionInRect(Point2 Size)
+	{ // is this point north-ish, south-ish, east-ish or west-ish in the passed size
+		bool NW = Vector3.Cross(new Vector2(x, y), new Vector2(Size.x, Size.y)).z < 0;
+		bool NE = Vector3.Cross(new Vector2(x - Size.x, y), new Vector2(Size.x * -1, Size.y)).z > 0;
+
+		Direction RetVal = Direction.West;
+
+		if(NW && NE)
+			RetVal = Direction.North;
+		else if (!NW && NE)
+			RetVal = Direction.East;
+		else if (!NW && !NE)
+			RetVal = Direction.South;
+
+		return RetVal;
+	}
 
 	public static Direction DirectionRotate(Direction d, int delta)
 	{
@@ -89,6 +170,21 @@ public struct Point2
 		return RetVal;
 	}
 
+	public static Direction DirectionOf(String s)
+	{
+		Direction RetVal = Direction.Invalid;
+		for(var D = Direction.First; (D < Direction.Length) && (RetVal == Direction.Invalid); ++D)
+			if(StrCompass[(int)D] == s)
+				RetVal = D;
+
+		return RetVal;
+	}
+
+	public static string NameOf(Direction D)
+	{
+		return StrCompass[(int)D];
+	}
+
 	public static readonly Point2 zero = new Point2(0, 0);
 	public static readonly Point2 one = new Point2(1, 1);
 
@@ -96,7 +192,7 @@ public struct Point2
 	{
 		get
 		{
-			return new Point2(Math.Abs(x), Math.Abs(y));
+			return new Point2(Mathi.Abs(x), Mathi.Abs(y));
 		}
 	}
 
@@ -112,7 +208,7 @@ public struct Point2
 	{
 		get
 		{
-			return new Point2(Math.Sign(x), Math.Sign(y));
+			return new Point2(Mathi.Signum(x), Mathi.Signum(y));
 		}
 	}
 
@@ -314,7 +410,7 @@ public struct Point3
 	{
 		get
 		{
-			return new Point3(Math.Abs(x), Math.Abs(y), Math.Abs(z));
+			return new Point3(Mathi.Abs(x), Mathi.Abs(y), Mathi.Abs(z));
 		}
 	}
 
@@ -330,7 +426,7 @@ public struct Point3
 	{
 		get
 		{
-			return new Point3(Math.Sign(x), Math.Sign(y), Math.Sign(z));
+			return new Point3(Mathi.Signum(x), Mathi.Signum(y), Mathi.Signum(z));
 		}
 	}
 
@@ -552,5 +648,26 @@ public static class PointHelpers
 	public static void SetValue<T>(this T[][][] array, T newValue, Point3 p)
 	{
 		array[p.x][p.y][p.z] = newValue;
+	}
+}
+
+// any new methods we added up there, we'll add to the Unity vectors, just out of convenience
+public static class VectorHelpers
+{
+	public static Point2.Direction RegionInRect(this Vector2 V, Vector2 Size)
+	{ // is this point north-ish, south-ish, east-ish or west-ish in a square of the passed size
+		bool NW = Vector3.Cross(V, Size).z < 0;
+		bool NE = Vector3.Cross(new Vector2(V.x - Size.x, V.y), new Vector2(Size.x * -1, Size.y)).z > 0;
+
+		Point2.Direction RetVal = Point2.Direction.West;
+
+		if(NW && NE)
+			RetVal = Point2.Direction.North;
+		else if(!NW && NE)
+			RetVal = Point2.Direction.East;
+		else if(!NW && !NE)
+			RetVal = Point2.Direction.South;
+
+		return RetVal;
 	}
 }
